@@ -17,3 +17,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+    
+class PromoteUserSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()

@@ -7,6 +7,8 @@ from django.db import transaction
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter, SearchFilter
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Sum
 
@@ -22,6 +24,10 @@ class GenreListCreateView(generics.ListCreateAPIView):
 class MovieListCreateView(generics.ListCreateAPIView):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    filterset_fields = ['genre']
+    ordering_fields = ['title', 'duration']
+    search_fields = ['title', 'description']
     def get_permissions(self):
         if self.request.method == 'POST':
             return [IsAdmin()]
@@ -43,15 +49,15 @@ class ShowtimeListCreateView(generics.ListCreateAPIView):
         if date:
             queryset = queryset.filter(show_date=date)
         return queryset
-    def validate_showtime(self, data):
-        existing = Showtime.objects.filter(
-            screen=data['screen'],
-            show_date=data['show_date']
-        )
-        for show in existing:
-            if (data['start_time'] < show.end_time and data['end_time'] > show.start_time):
-                raise serializers.ValidationError("Showtime overlaps with existing showtime")
-        return data
+    # def validate_showtime(self, data):
+    #     existing = Showtime.objects.filter(
+    #         screen=data['screen'],
+    #         show_date=data['show_date']
+    #     )
+    #     for show in existing:
+    #         if (data['start_time'] < show.end_time and data['end_time'] > show.start_time):
+    #             raise serializers.ValidationError("Showtime overlaps with existing showtime")
+    #     return data
     def get_permissions(self):
         if self.request.method == 'POST':
             return [IsAdmin()]

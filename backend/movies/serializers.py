@@ -23,6 +23,22 @@ class MovieSerializer(serializers.ModelSerializer):
 class ShowtimeSerializer(serializers.ModelSerializer):
     movie_title = serializers.CharField(source='movie.title', read_only=True)
     screen_name = serializers.CharField(source='screen.name', read_only=True)
+    def validate(self, data):
+        # print("Validation is running")
+        screen = data.get('screen')
+        show_date = data.get('show_date')
+        start_time = data.get('start_time')
+        end_time = data.get('end_time')
+        if start_time >= end_time:
+            raise serializers.ValidationError("End time must be later than start time")
+        existing_showtimes = Showtime.objects.filter(screen=screen, show_date=show_date)
+        if self.instance:
+            existing_showtimes = existing_showtimes.exclude(id=self.instance.id)
+        for show in existing_showtimes:
+            if (start_time < show.end_time and end_time > show.start_time):
+                raise serializers.ValidationError("Showtime overlaps with existing showtime")
+        return data
+    
     class Meta:
         model = Showtime
         fields = [
@@ -55,6 +71,7 @@ class SeatSerializer(serializers.ModelSerializer):
         ]
     def get_seat_label(self, obj):
         return f"{obj.row}{obj.number}"
+    
     
 class BookedSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
