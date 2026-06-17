@@ -8,6 +8,7 @@ class GenreSerializer(serializers.ModelSerializer):
 
 class MovieSerializer(serializers.ModelSerializer):
     genre_name = serializers.CharField(source='genre.name', read_only=True)
+    poster = serializers.ImageField(required=False)
     class Meta:
         model = Movie
         fields = [

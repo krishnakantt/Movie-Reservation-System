@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AdminReportView, AvailableSeatsView, BookedListCreateView, CancelBookingView, GenreListCreateView, MovieListCreateView, MovieDetailView, MyBookingsView, ShowtimeListCreateView, ScreenListCreateView, SeatListCreateView
+from .views import AdminReportView, AvailableSeatsView, BookedListCreateView, CancelBookingView, DashboardStatsView, GenreListCreateView, MovieListCreateView, MovieDetailView, MyBookingsView, RevenueByMovieView, ShowtimeListCreateView, ScreenListCreateView, SeatListCreateView, OccupancyReportView, TopMoviesReportView
 
 urlpatterns = [
     path('genres/', GenreListCreateView.as_view(), name='genre-list-create'),
@@ -12,5 +12,9 @@ urlpatterns = [
     path('showtimes/<int:showtime_id>/available-seats/', AvailableSeatsView.as_view(), name='available-seats'),
     path('my-bookings/', MyBookingsView.as_view(), name='my-bookings'),
     path('bookings/<int:booking_id>/cancel/', CancelBookingView.as_view(), name='cancel-booking'),
-    path('reports/', AdminReportView.as_view(), name='admin-report')
+    path('reports/', AdminReportView.as_view(), name='admin-report'),
+    path('dashboard/', DashboardStatsView.as_view(), name='dashboard'),
+    path('reports/occupancy/', OccupancyReportView.as_view(), name='occupancy-report'),
+    path('reports/revenue-by-movie/', RevenueByMovieView.as_view(), name='revenue-by-movie'),
+    path('reports/top-movies/', TopMoviesReportView.as_view(), name='top-movies-report')
 ]
