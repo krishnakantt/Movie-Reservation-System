@@ -9,6 +9,14 @@ class GenreSerializer(serializers.ModelSerializer):
 class MovieSerializer(serializers.ModelSerializer):
     genre_name = serializers.CharField(source='genre.name', read_only=True)
     poster = serializers.ImageField(required=False)
+    def validate_poster(self, value):
+        if value:
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("Image too Large")
+            if not value.content_type.startswith('image'):
+                raise serializers.ValidationError("Invalid Image")
+        return value
+    
     class Meta:
         model = Movie
         fields = [
@@ -93,3 +101,12 @@ class BookedSerializer(serializers.ModelSerializer):
             'user',
             'status',
             'reserved_at']
+        
+class MovieDetailSerializer(serializers.ModelSerializer):
+    genre_name = serializers.CharField(
+        source = 'genre.name',
+        read_only = True
+    )
+    class Meta:
+        model = Movie
+        fields = '__all__'

@@ -13,6 +13,8 @@ class Genre(models.Model):
 class Movie(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     poster = models.ImageField(
         upload_to = 'posters/',
         blank= True,
@@ -48,6 +50,8 @@ class Showtime(models.Model):
     show_date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     ticket_price = models.DecimalField(max_digits=8, decimal_places=2)
 
     def __str__(self):
@@ -66,6 +70,11 @@ class Booked(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='BOOKED')
     class Meta:
         unique_together = ('showtime', 'seat')
+        indexes = [
+            models.Index(fields=['showtime']),
+            models.Index(fields=['user']),
+            models.Index(fields=['status']),   
+        ]
 
     def __str__(self):
         return f"{self.user.username} - {self.showtime.movie.title}"

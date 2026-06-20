@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from .models import Movie, Genre, Showtime, Seat, Screen, Booked
-from .serializers import MovieSerializer, GenreSerializer, ShowtimeSerializer, SeatSerializer, ScreenSerializer, BookedSerializer
+from .serializers import MovieSerializer,MovieDetailSerializer, GenreSerializer, ShowtimeSerializer, SeatSerializer, ScreenSerializer, BookedSerializer
 from accounts.permissions import IsAdmin
 from django.db import transaction, IntegrityError
 from rest_framework import status
@@ -41,7 +41,7 @@ class MovieListCreateView(generics.ListCreateAPIView):
     
 class MovieDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Movie.objects.all()
-    serializer_class = MovieSerializer
+    serializer_class = MovieDetailSerializer
     def get_permissions(self):
         if self.request.method == 'GET':
             return [IsAuthenticated()]
@@ -61,15 +61,6 @@ class ShowtimeListCreateView(generics.ListCreateAPIView):
         if screen:
             queryset = queryset.filter(screen_id=screen)
         return queryset
-    # def validate_showtime(self, data):
-    #     existing = Showtime.objects.filter(
-    #         screen=data['screen'],
-    #         show_date=data['show_date']
-    #     )
-    #     for show in existing:
-    #         if (data['start_time'] < show.end_time and data['end_time'] > show.start_time):
-    #             raise serializers.ValidationError("Showtime overlaps with existing showtime")
-    #     return data
     def get_permissions(self):
         if self.request.method == 'POST':
             return [IsAdmin()]
@@ -141,7 +132,12 @@ class MyBookingsView(generics.ListAPIView):
     serializer_class = BookedSerializer
     permission_classes = [IsAuthenticated]
     def get_queryset(self):
-        return Booked.objects.filter(user=self.request.user).select_related('showtime','showtime__movie','seat').order_by('-reserved_at')
+        queryset = Booked.objects.filter(user=self.request.user)
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        return queryset.order_by('-reserved_at')
+        # return Booked.objects.filter(user=self.request.user).select_related('showtime','showtime__movie','seat').order_by('-reserved_at')
     
 class CancelBookingView(APIView):
     permission_classes = [IsAuthenticated]
@@ -155,6 +151,7 @@ class CancelBookingView(APIView):
         else:
             if booking.status == 'CANCELLED':
                 return Response({"error":"Booking already cancelled"},status=400)
+            booking.status = 'CANCELLED'
             booking.save()
             return Response({"message": "Booking Cancelled Successfully"})
     
@@ -249,3 +246,18 @@ class TopMoviesReportView(APIView):
                 "bookings": movie['total_bookings']
             })
         return Response(result)
+    
+class ShowtimeSeatStatsView(APIView):
+    permission_classes = [IsAdmin]
+    def get(self, request, showtime_id):
+        showtime = get_object_or_404(Showtime, id= showtime_id)
+        total = Seat.objects.filter(screen=showtime.screen).count()
+        booked = Booked.objects.filter(showtime=showtime, status = 'BOOKED').count()
+
+        return Response({
+            "showtime": showtime.id,
+            "movie": showtime.movie.title,
+            "total_seats":total,
+            "booked_seats":booked,
+            "available_seats": total - booked
+        })
